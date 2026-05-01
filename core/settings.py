@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Bibliotecas de terceros
+    'rest_framework',
+
+    # Apps locales
+    'validation',
 ]
 
 MIDDLEWARE = [
@@ -72,13 +78,20 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# core/settings.py
+
+# core/settings.py
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # Mudamos de 'django.db.backends.postgresql' para 'django.db.backends.postgresql' (o Django 4.2+ detecta e usa o psycopg 3 automaticamente se o 2 não estiver instalado)
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'vert_db',
+        'USER': 'vert_user',
+        'PASSWORD': 'vert_password',
+        'HOST': '127.0.0.1',  # Trocamos 'localhost' por '127.0.0.1' para evitar resoluções lentas de DNS no Windows
+        'PORT': '5433',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
