@@ -1,0 +1,19 @@
+services:
+  # ---------------------------------------------------------------------------
+  # BANCO DE DADOS (PostgreSQL) - Já baixado com sucesso!
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: vert_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: vert_db
+      POSTGRES_USER: vert_user
+      POSTGRES_PASSWORD: vert_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
