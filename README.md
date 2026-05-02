@@ -31,10 +31,3 @@ O projeto adota uma arquitetura de microsserviços desacoplada e orientada a eve
 * Python 3.10 ou superior instalado.
 * Docker e Docker Compose instalados na máquina.
 * Chave de API da OpenAI (`OPENAI_API_KEY`).
-
-### Passo a Passo
-
-#### 1. Clone o repositório
-```bash
-git clone [https://github.com/seu-usuario/vert-agentic-validator.git](https://github.com/seu-usuario/vert-agentic-validator.git)
-cd vert-agentic-validator
