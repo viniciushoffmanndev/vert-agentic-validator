@@ -1,17 +1,26 @@
 # Vert Agentic Validator
 
-Este projeto é uma API REST desenvolvida em Django e Django REST Framework para o ecossistema de Mercado de Capitais da VERT. O objetivo principal é servir como a camada de persistência e gerenciamento de Operações Financeiras (como CRIs e CRAs) que serão validadas por Agentes de IA.
+Este projeto é uma plataforma orientada a eventos desenvolvida para o ecossistema de Mercado de Capitais da VERT. O objetivo principal é receber operações financeiras (como CRIs, CRAs e Debêntures), distribuí-las de forma assíncrona via mensageria e validá-las em tempo real utilizando um Agente de Inteligência Artificial com regras de negócio específicas.
 
 ---
 
-## Arquitetura e Decisões Técnicas
+## Arquitetura e Fluxo de Dados
 
-A arquitetura foi desenhada pensando em isolamento de ambiente, performance e boas práticas de desenvolvimento:
+O projeto adota uma arquitetura de microsserviços desacoplada e orientada a eventos:
 
-* **Django & Django REST Framework:** Utilizados para a construção rápida de uma API robusta, segura e de fácil manutenção.
-* **PostgreSQL (Docker):** Banco de dados relacional robusto rodando em container para garantir que o ambiente de desenvolvimento seja idêntico ao de produção.
-* **Psycopg 3:** Utilizado como driver de conexão com o banco de dados por oferecer melhor suporte nativo a encoding (UTF-8) em sistemas Windows.
-* **Isolamento de Portas:** O PostgreSQL do Docker foi mapeado para a porta externa `5433` para evitar conflitos com instâncias locais do Postgres rodando na porta padrão (`5432`).
+1. **Django REST Framework (Produtor):** Atua como a API de persistência das operações no banco de dados **PostgreSQL** e publica cada nova operação no tópico `financial-operations` do **Apache Kafka**.
+2. **Apache Kafka (Mensageria):** Orquestra e armazena a fila de operações financeiras de forma resiliente.
+3. **Agente de IA / Worker (Consumidor):** Um worker Python independente que consome as mensagens do Kafka, processa as regras de negócio via **LangChain** e valida a operação utilizando a API da **OpenAI** (`gpt-4o-mini`).
+
+---
+
+## Decisões Técnicas
+
+* **Django & DRF:** Construção rápida e segura da API e da camada de persistência.
+* **PostgreSQL (Docker):** Banco de dados relacional rodando na porta externa `5433` para evitar conflitos com instâncias locais.
+* **Apache Kafka (Docker):** Utilizado para garantir o processamento assíncrono e tolerância a falhas.
+* **LangChain & OpenAI (`gpt-4o-mini`):** Framework utilizado para criar a chain de validação com prompts estruturados que retornam respostas estritamente em JSON.
+* **Python-dotenv:** Gestão segura de chaves de API e variáveis de ambiente.
 
 ---
 
@@ -21,61 +30,48 @@ A arquitetura foi desenhada pensando em isolamento de ambiente, performance e bo
 
 * Python 3.10 ou superior instalado.
 * Docker e Docker Compose instalados na máquina.
+* Chave de API da OpenAI (`OPENAI_API_KEY`).
 
 ### Passo a Passo
 
-1.  **Clone o repositório:**
-    ```bash
-    git clone [https://github.com/seu-usuario/vert-agentic-validator.git](https://github.com/seu-usuario/vert-agentic-validator.git)
-    cd vert-agentic-validator
-    ```
+#### 1. Clone o repositório
+```bash
+git clone [https://github.com/seu-usuario/vert-agentic-validator.git](https://github.com/seu-usuario/vert-agentic-validator.git)
+cd vert-agentic-validator
 
-2.  **Inicie o Banco de Dados no Docker:**
-    ```bash
-    docker compose up -d
-    ```
-    *Nota: O banco de dados estará disponível na porta `5433`.*
+## 2. Configure as variáveis de ambiente
 
-3.  **Crie e ative o ambiente virtual (Windows):**
-    ```powershell
-    python -m venv venv
-    .\venv\Scripts\Activate
-    ```
+Cria um arquivo `.env` na raiz do projeto e adiciona a tua chave da OpenAI:
 
-4.  **Instale as dependências:**
-    ```powershell
-    python -m pip install --upgrade pip
-    pip install django djangorestframework "psycopg[binary]"
-    ```
+```env
+OPENAI_API_KEY=sk-proj-sua_chave_aqui
 
-5.  **Execute as migrations do Django:**
-    ```powershell
-    python manage.py migrate
-    ```
+## 3. Inicia os serviços no Docker (Banco de Dados e Kafka)
 
-6.  **Inicie o servidor de desenvolvimento:**
-    ```powershell
-    python manage.py runserver
-    ```
+docker compose up -d
 
-Acesse a API em seu navegador através do endereço: `http://127.0.0.1:8000/api/operations/`
+## 4. Cria e ativa o ambiente virtual (Windows)
 
----
+python -m venv venv
+.\venv\Scripts\Activate
 
-## Endpoints Principais
+## 5. Instala as dependências
 
-* `GET /api/operations/` - Lista todas as operações financeiras cadastradas.
-* `POST /api/operations/` - Registra uma nova operação para validação.
+python -m pip install --upgrade pip
+pip install django djangorestframework "psycopg[binary]" confluent-kafka python-dotenv langchain-core langchain-openai
 
-### Estrutura do Objeto (Financial Operation)
+## 6. Executa as migrations do Django
 
-```json
-{
-  "id": "uuid-v4-gerado-automaticamente",
-  "asset_code": "CRI001",
-  "issuer": "VERT Securitizadora",
-  "volume": "1500000.00",
-  "status": "PENDING",
-  "created_at": "2026-05-01T18:41:00Z",
-  "updated_at": "2026-05-01T18:41:00Z"
-}
+python manage.py migrate
+
+## 37. Inicia o servidor da API (Terminal 1)
+
+python manage.py runserver 
+
+A API estará disponível em:
+👉 http://127.0.0.1:8000/api/operations/
+
+## 8. Inicia o Worker do Agente de IA (Terminal 2)
+
+.\venv\Scripts\Activate
+python agent_worker.py
